@@ -24,7 +24,8 @@
     "expo-linking": "~6.3.1",
     "zustand": "^4.4.7",
     "@expo/vector-icons": "^14.0.2",
-    "react-native-vector-icons": "^10.0.3"
+    "react-native-vector-icons": "^10.0.3",
+    "expo-router": "~3.5.23"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
