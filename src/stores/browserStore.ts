@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Tab, Bookmark, HistoryEntry, QuickLink, BrowserState, NavigationHistory } from '../types/browser';
 
 interface BrowserActions {
@@ -40,14 +41,14 @@ const defaultTab: Tab = {
 };
 
 const defaultQuickLinks: QuickLink[] = [
-  { id: generateId(), title: 'Google', url: 'https://google.com', icon: '🔍', color: 'bg-blue-500' },
-  { id: generateId(), title: 'Wikipedia', url: 'https://wikipedia.org', icon: 'W', color: 'bg-gray-600' },
-  { id: generateId(), title: 'Amazon', url: 'https://amazon.com', icon: '📦', color: 'bg-orange-500' },
-  { id: generateId(), title: 'Facebook', url: 'https://facebook.com', icon: 'f', color: 'bg-blue-600' },
-  { id: generateId(), title: 'X', url: 'https://x.com', icon: 'X', color: 'bg-black' },
-  { id: generateId(), title: 'Booking.com', url: 'https://booking.com', icon: 'B', color: 'bg-blue-700' },
-  { id: generateId(), title: 'Weather', url: 'https://weather.com', icon: '☀️', color: 'bg-orange-400' },
-  { id: generateId(), title: 'Opera', url: 'https://opera.com', icon: 'O', color: 'bg-red-500' },
+  { id: generateId(), title: 'Google', url: 'https://google.com', icon: '🔍', color: '#3B82F6' },
+  { id: generateId(), title: 'Wikipedia', url: 'https://wikipedia.org', icon: 'W', color: '#6B7280' },
+  { id: generateId(), title: 'Amazon', url: 'https://amazon.com', icon: '📦', color: '#F97316' },
+  { id: generateId(), title: 'Facebook', url: 'https://facebook.com', icon: 'f', color: '#1877F2' },
+  { id: generateId(), title: 'X', url: 'https://x.com', icon: 'X', color: '#000000' },
+  { id: generateId(), title: 'Booking.com', url: 'https://booking.com', icon: 'B', color: '#1E40AF' },
+  { id: generateId(), title: 'Weather', url: 'https://weather.com', icon: '☀️', color: '#F59E0B' },
+  { id: generateId(), title: 'Opera', url: 'https://opera.com', icon: 'O', color: '#EF4444' },
 ];
 
 export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompletedWelcome: boolean }>()(
@@ -96,7 +97,6 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
         set((state) => ({
           tabs: state.tabs.map((tab) => ({ ...tab, isActive: false })).concat(newTab),
           activeTabId: newTab.id,
-          // Automatically switch to the appropriate mode based on the new tab
           isPrivateMode: isPrivate
         }));
       },
@@ -129,12 +129,9 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
           let newPrivateMode = state.isPrivateMode;
           
           if (state.activeTabId === tabId) {
-            // Find the most recent tab to switch to
             newActiveTabId = remainingTabs[remainingTabs.length - 1].id;
             const newActiveTab = remainingTabs[remainingTabs.length - 1];
             newActiveTab.isActive = true;
-            
-            // Switch mode based on the new active tab
             newPrivateMode = newActiveTab.isPrivate;
           }
 
@@ -157,7 +154,6 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
               isActive: tab.id === tabId,
             })),
             activeTabId: tabId,
-            // Automatically switch to the appropriate mode based on the selected tab
             isPrivateMode: targetTab.isPrivate
           };
         });
@@ -175,11 +171,9 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
         set((state) => {
           const updatedTabs = state.tabs.map((tab) => {
             if (tab.id === tabId) {
-              // Create new navigation entry
               const newEntry = { url, title: 'Loading...', timestamp: Date.now() };
               const currentHistory = tab.navigationHistory || { entries: [], currentIndex: -1 };
               
-              // Remove any forward history when navigating to a new page
               const newEntries = [
                 ...currentHistory.entries.slice(0, currentHistory.currentIndex + 1),
                 newEntry
@@ -199,7 +193,6 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
             return tab;
           });
 
-          // Simulate loading and update title
           setTimeout(() => {
             const title = url.includes('google.com') ? 'Google' :
                          url.includes('github.com') ? 'GitHub' :
@@ -243,7 +236,7 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
           if (!tab || !tab.navigationHistory) return state;
 
           const { entries, currentIndex } = tab.navigationHistory;
-          if (currentIndex <= 0) return state; // Can't go back further
+          if (currentIndex <= 0) return state;
 
           const newIndex = currentIndex - 1;
           const targetEntry = entries[newIndex];
@@ -273,7 +266,7 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
           if (!tab || !tab.navigationHistory) return state;
 
           const { entries, currentIndex } = tab.navigationHistory;
-          if (currentIndex >= entries.length - 1) return state; // Can't go forward further
+          if (currentIndex >= entries.length - 1) return state;
 
           const newIndex = currentIndex + 1;
           const targetEntry = entries[newIndex];
@@ -337,7 +330,7 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
         };
 
         set((state) => ({
-          history: [historyEntry, ...state.history.slice(0, 99)], // Keep last 100 entries
+          history: [historyEntry, ...state.history.slice(0, 99)],
         }));
       },
 
@@ -380,6 +373,7 @@ export const useBrowserStore = create<BrowserState & BrowserActions & { hasCompl
     }),
     {
       name: 'atom-browser-storage',
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         bookmarks: state.bookmarks,
         history: state.history,

@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Shield, ShieldAlert, Star, Lock, Eye } from 'lucide-react';
+import { View, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useBrowserStore } from '../stores/browserStore';
+import { useTheme } from '../hooks/useTheme';
+
+const { width } = Dimensions.get('window');
 
 export const AddressBar: React.FC = () => {
   const { tabs, activeTabId, navigateTab, addBookmark, bookmarks, isPrivateMode } = useBrowserStore();
   const [inputValue, setInputValue] = useState('');
+  const { colors } = useTheme();
   
   const activeTab = tabs.find(tab => tab.id === activeTabId);
   
@@ -16,8 +21,7 @@ export const AddressBar: React.FC = () => {
     }
   }, [activeTab]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!activeTabId || !inputValue.trim()) return;
 
     let url = inputValue.trim();
@@ -54,60 +58,76 @@ export const AddressBar: React.FC = () => {
   }
 
   return (
-    <div className={`flex items-center space-x-2 px-4 py-2 border-b transition-all duration-200 ${
-      isPrivateMode 
-        ? 'bg-gray-900 border-purple-700/50' 
-        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-    }`}>
-      <form onSubmit={handleSubmit} className="flex-1 flex items-center">
-        <div className={`relative flex-1 flex items-center rounded-lg transition-all duration-200 ${
-          isPrivateMode 
-            ? 'bg-gray-800/80 border border-purple-500/30' 
-            : 'bg-gray-100 dark:bg-gray-700'
-        }`}>
-          <div className="flex items-center pl-3">
-            {isPrivateMode ? (
-              <Eye className="w-4 h-4 text-purple-400" />
-            ) : isSecure ? (
-              <Shield className="w-4 h-4 text-green-500" />
-            ) : (
-              <ShieldAlert className="w-4 h-4 text-red-500" />
-            )}
-          </div>
-          
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={isPrivateMode ? "Private browsing - search or enter address" : "Search or enter address"}
-            className={`flex-1 px-3 py-2 bg-transparent focus:outline-none transition-colors duration-200 ${
-              isPrivateMode 
-                ? 'text-white placeholder-purple-300' 
-                : 'text-gray-900 dark:text-white placeholder-gray-500'
-            }`}
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor: isPrivateMode ? colors.privateBackground : colors.surface,
+        borderBottomColor: isPrivateMode ? colors.privateBorder : colors.border
+      }
+    ]}>
+      <View style={[
+        styles.addressBarContainer,
+        { 
+          backgroundColor: isPrivateMode ? colors.privateInput : colors.input,
+          borderColor: isPrivateMode ? colors.privateBorder : colors.border
+        }
+      ]}>
+        <View style={styles.securityIcon}>
+          <Ionicons 
+            name={isPrivateMode ? "eye" : isSecure ? "shield-checkmark" : "warning"} 
+            size={16} 
+            color={isPrivateMode ? colors.privatePrimary : isSecure ? colors.success : colors.warning} 
           />
-          
-          <button
-            type="button"
-            onClick={handleBookmark}
-            className={`p-2 rounded-r-lg transition-colors duration-200 ${
-              isPrivateMode 
-                ? 'hover:bg-purple-800/50' 
-                : 'hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            <Star 
-              className={`w-4 h-4 ${
-                isBookmarked 
-                  ? 'text-yellow-500 fill-current' 
-                  : isPrivateMode 
-                    ? 'text-purple-400' 
-                    : 'text-gray-400'
-              }`} 
-            />
-          </button>
-        </div>
-      </form>
-    </div>
+        </View>
+        
+        <TextInput
+          style={[styles.input, { color: colors.text }]}
+          value={inputValue}
+          onChangeText={setInputValue}
+          onSubmitEditing={handleSubmit}
+          placeholder={isPrivateMode ? "Private browsing - search or enter address" : "Search or enter address"}
+          placeholderTextColor={colors.textSecondary}
+          returnKeyType="go"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        
+        <TouchableOpacity onPress={handleBookmark} style={styles.bookmarkButton}>
+          <Ionicons 
+            name={isBookmarked ? "star" : "star-outline"} 
+            size={20} 
+            color={isBookmarked ? colors.warning : colors.textSecondary} 
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  addressBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 25,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    height: 44,
+  },
+  securityIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 0,
+  },
+  bookmarkButton: {
+    marginLeft: 12,
+    padding: 4,
+  },
+});

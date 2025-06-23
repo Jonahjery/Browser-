@@ -1,27 +1,23 @@
 import React, { useState } from 'react';
-import { Layers, X, Plus, UserX, Globe, Lock, Eye } from 'lucide-react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useBrowserStore } from '../stores/browserStore';
+import { useTheme } from '../hooks/useTheme';
+
+const { width, height } = Dimensions.get('window');
 
 export const TabSwitcher: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [deletingTabId, setDeletingTabId] = useState<string | null>(null);
   const { tabs, activeTabId, setActiveTab, closeTab, createTab, isPrivateMode } = useBrowserStore();
+  const { colors } = useTheme();
 
   const handleTabClick = (tabId: string) => {
-    if (deletingTabId === tabId) return; // Prevent clicking while deleting
     setActiveTab(tabId);
     setIsOpen(false);
   };
 
-  const handleCloseTab = (e: React.MouseEvent, tabId: string) => {
-    e.stopPropagation();
-    setDeletingTabId(tabId);
-    
-    // Add a small delay for visual feedback
-    setTimeout(() => {
-      closeTab(tabId);
-      setDeletingTabId(null);
-    }, 200);
+  const handleCloseTab = (tabId: string) => {
+    closeTab(tabId);
   };
 
   const handleNewTab = () => {
@@ -45,19 +41,11 @@ export const TabSwitcher: React.FC = () => {
   };
 
   const getFavicon = (tab: any) => {
-    if (tab.url === 'atom://newtab') return tab.isPrivate ? '🔒' : '🏠';
-    if (tab.url.includes('google.com')) return '🔍';
-    if (tab.url.includes('github.com')) return '🐙';
-    if (tab.url.includes('youtube.com')) return '📺';
-    if (tab.url.includes('wikipedia.org')) return '📖';
-    if (tab.url.includes('stackoverflow.com')) return '💻';
-    if (tab.url.includes('facebook.com')) return '📘';
-    if (tab.url.includes('twitter.com') || tab.url.includes('x.com')) return '🐦';
-    if (tab.url.includes('amazon.com')) return '📦';
-    if (tab.url.includes('netflix.com')) return '🎬';
-    if (tab.url.includes('spotify.com')) return '🎵';
-    if (tab.url.includes('reddit.com')) return '🤖';
-    return tab.isPrivate ? '🔒' : '🌐';
+    if (tab.url === 'atom://newtab') return tab.isPrivate ? 'lock' : 'home';
+    if (tab.url.includes('google.com')) return 'search';
+    if (tab.url.includes('github.com')) return 'logo-github';
+    if (tab.url.includes('youtube.com')) return 'logo-youtube';
+    return tab.isPrivate ? 'lock' : 'globe';
   };
 
   const privateTabs = tabs.filter(tab => tab.isPrivate);
@@ -65,343 +53,271 @@ export const TabSwitcher: React.FC = () => {
 
   return (
     <>
-      <div className="relative">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-110 relative"
-          title="Tab Switcher"
-        >
-          <Layers className="w-6 h-6" />
-          {tabs.length > 1 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-              {tabs.length}
-            </div>
-          )}
-        </button>
-
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 animate-fadeIn" 
-              onClick={() => setIsOpen(false)}
-            />
-            
-            {/* Tab Switcher Modal - Enhanced for Private Mode */}
-            <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4 animate-slideUp">
-              <div className={`w-full rounded-2xl shadow-2xl border max-h-[70vh] overflow-hidden transition-all duration-300 ${
-                isPrivateMode 
-                  ? 'bg-gray-900 border-purple-700/50' 
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-              }`}>
-                {/* Header */}
-                <div className={`p-6 border-b transition-all duration-200 ${
-                  isPrivateMode 
-                    ? 'bg-gradient-to-r from-purple-900/50 to-gray-900 border-purple-700/50' 
-                    : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-700'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center space-x-3">
-                        <h3 className={`text-xl font-bold transition-colors duration-200 ${
-                          isPrivateMode ? 'text-white' : 'text-gray-900 dark:text-white'
-                        }`}>
-                          Open Tabs
-                        </h3>
-                        {isPrivateMode && (
-                          <div className="flex items-center space-x-1 px-2 py-1 bg-purple-600/30 border border-purple-500/50 rounded-full">
-                            <Lock className="w-3 h-3 text-purple-300" />
-                            <span className="text-xs font-bold text-purple-200">PRIVATE</span>
-                          </div>
-                        )}
-                      </div>
-                      <p className={`text-sm mt-1 transition-colors duration-200 ${
-                        isPrivateMode ? 'text-purple-300' : 'text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {tabs.length} tab{tabs.length !== 1 ? 's' : ''} currently open
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => setIsOpen(false)}
-                        className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-lg ${
-                          isPrivateMode 
-                            ? 'text-purple-400 hover:text-purple-300 hover:bg-purple-800/30' 
-                            : 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                        }`}
-                      >
-                        Done
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tabs Grid - Enhanced for Private Mode */}
-                <div className="p-6 max-h-[50vh] overflow-y-auto">
-                  {/* Private Tabs Section */}
-                  {privateTabs.length > 0 && (
-                    <div className="mb-6">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <Lock className="w-4 h-4 text-purple-400" />
-                        <h4 className="text-sm font-bold text-purple-300">Private Tabs ({privateTabs.length})</h4>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        {privateTabs.map((tab, index) => (
-                          <div
-                            key={tab.id}
-                            className={`relative group animate-fadeInUp ${
-                              deletingTabId === tab.id ? 'animate-pulse opacity-50' : ''
-                            }`}
-                            style={{
-                              animationDelay: `${index * 100}ms`
-                            }}
-                          >
-                            <button
-                              onClick={() => handleTabClick(tab.id)}
-                              disabled={deletingTabId === tab.id}
-                              className={`w-full p-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg border-2 ${
-                                tab.id === activeTabId 
-                                  ? 'bg-gradient-to-br from-purple-900/50 to-gray-900/50 border-purple-500/50 shadow-lg shadow-purple-500/20' 
-                                  : 'bg-gray-800/60 border-purple-700/30 hover:border-purple-500/50'
-                              } ${deletingTabId === tab.id ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                            >
-                              {/* Private Tab Preview Card */}
-                              <div className="flex flex-col space-y-3">
-                                {/* Top Row - Favicon and Close */}
-                                <div className="flex items-center justify-between">
-                                  <div className="w-10 h-10 bg-purple-800/50 rounded-xl flex items-center justify-center text-xl flex-shrink-0 shadow-sm border border-purple-600/30">
-                                    {tab.isLoading ? (
-                                      <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                                    ) : deletingTabId === tab.id ? (
-                                      <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                      getFavicon(tab)
-                                    )}
-                                  </div>
-                                  
-                                  {/* Enhanced Close Button for Private */}
-                                  {tabs.length > 1 && (
-                                    <div className="flex items-center space-x-1">
-                                      <button
-                                        onClick={(e) => handleCloseTab(e, tab.id)}
-                                        disabled={deletingTabId === tab.id}
-                                        className={`p-2 rounded-lg transition-all duration-200 ${
-                                          deletingTabId === tab.id
-                                            ? 'bg-red-900/30 text-red-400 cursor-not-allowed'
-                                            : 'opacity-70 group-hover:opacity-100 hover:bg-red-900/30 text-red-400 hover:text-red-300 hover:scale-110'
-                                        }`}
-                                        title={deletingTabId === tab.id ? 'Closing...' : 'Close Private Tab'}
-                                      >
-                                        {deletingTabId === tab.id ? (
-                                          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
-                                        ) : (
-                                          <X className="w-4 h-4" />
-                                        )}
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Tab Content */}
-                                <div className="text-left space-y-2">
-                                  {/* Title Row with Private Indicator */}
-                                  <div className="flex items-center space-x-2">
-                                    <div className="w-5 h-5 bg-purple-700/50 rounded-full flex items-center justify-center border border-purple-500/50">
-                                      <UserX className="w-3 h-3 text-purple-300" />
-                                    </div>
-                                    <h4 className={`font-semibold text-white text-sm leading-tight line-clamp-2 ${
-                                      deletingTabId === tab.id ? 'opacity-50' : ''
-                                    }`}>
-                                      {deletingTabId === tab.id ? 'Closing...' : getTabTitle(tab)}
-                                    </h4>
-                                  </div>
-                                  
-                                  {/* URL */}
-                                  {getTabUrl(tab) && !deletingTabId && (
-                                    <div className="flex items-center space-x-1">
-                                      <Eye className="w-3 h-3 text-purple-400 flex-shrink-0" />
-                                      <p className="text-xs text-purple-300 truncate">
-                                        {getTabUrl(tab)}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Active Indicator */}
-                                {tab.id === activeTabId && deletingTabId !== tab.id && (
-                                  <div className="absolute top-2 left-2 w-3 h-3 bg-purple-400 rounded-full shadow-lg animate-pulse"></div>
-                                )}
-
-                                {/* Deleting Indicator */}
-                                {deletingTabId === tab.id && (
-                                  <div className="absolute top-2 left-2 w-3 h-3 bg-red-400 rounded-full shadow-lg animate-pulse"></div>
-                                )}
-                              </div>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Normal Tabs Section */}
-                  {normalTabs.length > 0 && (
-                    <div className="mb-4">
-                      {privateTabs.length > 0 && (
-                        <div className="flex items-center space-x-2 mb-4">
-                          <Globe className={`w-4 h-4 ${isPrivateMode ? 'text-gray-400' : 'text-blue-500'}`} />
-                          <h4 className={`text-sm font-bold ${isPrivateMode ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Normal Tabs ({normalTabs.length})
-                          </h4>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-4">
-                        {normalTabs.map((tab, index) => (
-                          <div
-                            key={tab.id}
-                            className={`relative group animate-fadeInUp ${
-                              deletingTabId === tab.id ? 'animate-pulse opacity-50' : ''
-                            }`}
-                            style={{
-                              animationDelay: `${(privateTabs.length + index) * 100}ms`
-                            }}
-                          >
-                            <button
-                              onClick={() => handleTabClick(tab.id)}
-                              disabled={deletingTabId === tab.id}
-                              className={`w-full p-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg border-2 ${
-                                tab.id === activeTabId 
-                                  ? isPrivateMode
-                                    ? 'bg-gray-800/60 border-gray-600 shadow-md'
-                                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-300 dark:border-blue-600 shadow-md'
-                                  : isPrivateMode
-                                    ? 'bg-gray-800/40 border-gray-700 hover:border-gray-600'
-                                    : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                              } ${deletingTabId === tab.id ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                            >
-                              {/* Normal Tab Preview Card */}
-                              <div className="flex flex-col space-y-3">
-                                {/* Top Row - Favicon and Close */}
-                                <div className="flex items-center justify-between">
-                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 shadow-sm ${
-                                    isPrivateMode ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-600'
-                                  }`}>
-                                    {tab.isLoading ? (
-                                      <div className={`w-5 h-5 border-2 border-t-transparent rounded-full animate-spin ${
-                                        isPrivateMode ? 'border-gray-400' : 'border-blue-500'
-                                      }`}></div>
-                                    ) : deletingTabId === tab.id ? (
-                                      <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                      getFavicon(tab)
-                                    )}
-                                  </div>
-                                  
-                                  {/* Enhanced Close Button */}
-                                  {tabs.length > 1 && (
-                                    <div className="flex items-center space-x-1">
-                                      <button
-                                        onClick={(e) => handleCloseTab(e, tab.id)}
-                                        disabled={deletingTabId === tab.id}
-                                        className={`p-2 rounded-lg transition-all duration-200 ${
-                                          deletingTabId === tab.id
-                                            ? 'bg-red-100 dark:bg-red-900/30 text-red-400 cursor-not-allowed'
-                                            : 'opacity-70 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 hover:text-red-600 hover:scale-110'
-                                        }`}
-                                        title={deletingTabId === tab.id ? 'Closing...' : 'Close Tab'}
-                                      >
-                                        {deletingTabId === tab.id ? (
-                                          <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                                        ) : (
-                                          <X className="w-4 h-4" />
-                                        )}
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Tab Content */}
-                                <div className="text-left space-y-2">
-                                  {/* Title Row */}
-                                  <div className="flex items-center space-x-2">
-                                    <h4 className={`font-semibold text-sm leading-tight line-clamp-2 ${
-                                      deletingTabId === tab.id ? 'opacity-50' : ''
-                                    } ${isPrivateMode ? 'text-gray-200' : 'text-gray-900 dark:text-white'}`}>
-                                      {deletingTabId === tab.id ? 'Closing...' : getTabTitle(tab)}
-                                    </h4>
-                                  </div>
-                                  
-                                  {/* URL */}
-                                  {getTabUrl(tab) && !deletingTabId && (
-                                    <div className="flex items-center space-x-1">
-                                      <Globe className={`w-3 h-3 flex-shrink-0 ${isPrivateMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                                      <p className={`text-xs truncate ${isPrivateMode ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                        {getTabUrl(tab)}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Active Indicator */}
-                                {tab.id === activeTabId && deletingTabId !== tab.id && (
-                                  <div className={`absolute top-2 left-2 w-3 h-3 rounded-full shadow-lg animate-pulse ${
-                                    isPrivateMode ? 'bg-gray-400' : 'bg-blue-500'
-                                  }`}></div>
-                                )}
-
-                                {/* Deleting Indicator */}
-                                {deletingTabId === tab.id && (
-                                  <div className="absolute top-2 left-2 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse"></div>
-                                )}
-                              </div>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Add New Tab Card */}
-                  <div className="animate-fadeInUp" style={{ animationDelay: `${tabs.length * 100}ms` }}>
-                    <button
-                      onClick={handleNewTab}
-                      className={`w-full h-full min-h-[120px] p-4 rounded-xl border-2 border-dashed transition-all duration-300 transform hover:scale-[1.02] group ${
-                        isPrivateMode 
-                          ? 'border-purple-600 hover:border-purple-500 bg-gray-800/30 hover:bg-purple-900/20' 
-                          : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center justify-center space-y-3 h-full">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                          isPrivateMode 
-                            ? 'bg-purple-800/30 group-hover:bg-purple-700/50' 
-                            : 'bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/50'
-                        }`}>
-                          <Plus className={`w-4 h-4 ${
-                            isPrivateMode ? 'text-purple-400' : 'text-blue-600 dark:text-blue-400'
-                          }`} />
-                        </div>
-                        <div className="text-center">
-                          <p className={`font-medium text-sm ${
-                            isPrivateMode ? 'text-purple-200' : 'text-gray-700 dark:text-gray-300'
-                          }`}>
-                            New {isPrivateMode ? 'Private ' : ''}Tab
-                          </p>
-                          <p className={`text-xs ${
-                            isPrivateMode ? 'text-purple-400' : 'text-gray-500 dark:text-gray-400'
-                          }`}>
-                            Create a new {isPrivateMode ? 'private ' : ''}tab
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
+      <TouchableOpacity
+        onPress={() => setIsOpen(true)}
+        style={[styles.tabButton, { backgroundColor: colors.input }]}
+      >
+        <Ionicons name="layers" size={24} color={colors.text} />
+        {tabs.length > 1 && (
+          <View style={[styles.tabCount, { backgroundColor: colors.primary }]}>
+            <Text style={styles.tabCountText}>{tabs.length}</Text>
+          </View>
         )}
-      </div>
+      </TouchableOpacity>
+
+      <Modal
+        visible={isOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsOpen(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
+              Open Tabs
+            </Text>
+            <TouchableOpacity
+              onPress={() => setIsOpen(false)}
+              style={styles.closeButton}
+            >
+              <Text style={[styles.closeButtonText, { color: colors.primary }]}>Done</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.tabsList} contentContainerStyle={styles.tabsContent}>
+            {/* Private Tabs Section */}
+            {privateTabs.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name="lock-closed" size={16} color="#8B5CF6" />
+                  <Text style={[styles.sectionTitle, { color: '#8B5CF6' }]}>
+                    Private Tabs ({privateTabs.length})
+                  </Text>
+                </View>
+                {privateTabs.map((tab) => (
+                  <TouchableOpacity
+                    key={tab.id}
+                    onPress={() => handleTabClick(tab.id)}
+                    style={[
+                      styles.tabItem,
+                      { 
+                        backgroundColor: tab.id === activeTabId ? colors.primary + '20' : colors.surface,
+                        borderColor: tab.id === activeTabId ? colors.primary : colors.border
+                      }
+                    ]}
+                  >
+                    <View style={styles.tabContent}>
+                      <View style={[styles.tabIcon, { backgroundColor: '#8B5CF6' }]}>
+                        <Ionicons name={getFavicon(tab) as any} size={16} color="#FFFFFF" />
+                      </View>
+                      <View style={styles.tabInfo}>
+                        <Text style={[styles.tabTitle, { color: colors.text }]} numberOfLines={1}>
+                          {getTabTitle(tab)}
+                        </Text>
+                        {getTabUrl(tab) && (
+                          <Text style={[styles.tabUrl, { color: colors.textSecondary }]} numberOfLines={1}>
+                            {getTabUrl(tab)}
+                          </Text>
+                        )}
+                      </View>
+                      {tabs.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() => handleCloseTab(tab.id)}
+                          style={styles.closeTabButton}
+                        >
+                          <Ionicons name="close" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Normal Tabs Section */}
+            {normalTabs.length > 0 && (
+              <View style={styles.section}>
+                {privateTabs.length > 0 && (
+                  <View style={styles.sectionHeader}>
+                    <Ionicons name="globe" size={16} color={colors.primary} />
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                      Normal Tabs ({normalTabs.length})
+                    </Text>
+                  </View>
+                )}
+                {normalTabs.map((tab) => (
+                  <TouchableOpacity
+                    key={tab.id}
+                    onPress={() => handleTabClick(tab.id)}
+                    style={[
+                      styles.tabItem,
+                      { 
+                        backgroundColor: tab.id === activeTabId ? colors.primary + '20' : colors.surface,
+                        borderColor: tab.id === activeTabId ? colors.primary : colors.border
+                      }
+                    ]}
+                  >
+                    <View style={styles.tabContent}>
+                      <View style={[styles.tabIcon, { backgroundColor: colors.primary }]}>
+                        <Ionicons name={getFavicon(tab) as any} size={16} color="#FFFFFF" />
+                      </View>
+                      <View style={styles.tabInfo}>
+                        <Text style={[styles.tabTitle, { color: colors.text }]} numberOfLines={1}>
+                          {getTabTitle(tab)}
+                        </Text>
+                        {getTabUrl(tab) && (
+                          <Text style={[styles.tabUrl, { color: colors.textSecondary }]} numberOfLines={1}>
+                            {getTabUrl(tab)}
+                          </Text>
+                        )}
+                      </View>
+                      {tabs.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() => handleCloseTab(tab.id)}
+                          style={styles.closeTabButton}
+                        >
+                          <Ionicons name="close" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Add New Tab */}
+            <TouchableOpacity
+              onPress={handleNewTab}
+              style={[styles.addTabButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              <Ionicons name="add" size={24} color={colors.primary} />
+              <Text style={[styles.addTabText, { color: colors.text }]}>
+                New {isPrivateMode ? 'Private ' : ''}Tab
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  tabButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  tabCount: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabCountText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  tabsList: {
+    flex: 1,
+  },
+  tabsContent: {
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  tabItem: {
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  tabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  tabIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  tabInfo: {
+    flex: 1,
+  },
+  tabTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  tabUrl: {
+    fontSize: 12,
+  },
+  closeTabButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addTabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  addTabText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

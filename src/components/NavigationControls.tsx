@@ -1,11 +1,14 @@
 import React from 'react';
-import { ArrowLeft, ArrowRight, RotateCcw, Home, Menu, Layers } from 'lucide-react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useBrowserStore } from '../stores/browserStore';
-import { BrowserMenu } from './BrowserMenu';
+import { useTheme } from '../hooks/useTheme';
 import { TabSwitcher } from './TabSwitcher';
+import { BrowserMenu } from './BrowserMenu';
 
 export const NavigationControls: React.FC = () => {
   const { activeTabId, navigateTab, goBack, goForward, canGoBack, canGoForward } = useBrowserStore();
+  const { colors } = useTheme();
 
   const handleHome = () => {
     if (activeTabId) {
@@ -38,62 +41,83 @@ export const NavigationControls: React.FC = () => {
   const canNavigateForward = activeTabId ? canGoForward(activeTabId) : false;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
+    <View style={[styles.container, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
       {/* Left side navigation */}
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={handleBack}
+      <View style={styles.leftControls}>
+        <TouchableOpacity
+          onPress={handleBack}
           disabled={!canNavigateBack}
-          className={`p-3 rounded-full transition-all duration-200 transform ${
-            canNavigateBack 
-              ? 'hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 text-gray-700 dark:text-gray-300' 
-              : 'opacity-40 cursor-not-allowed text-gray-400 dark:text-gray-600'
-          }`}
-          title={canNavigateBack ? "Go back" : "Can't go back"}
+          style={[styles.navButton, { opacity: canNavigateBack ? 1 : 0.4 }]}
         >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
+          <Ionicons 
+            name="chevron-back" 
+            size={24} 
+            color={canNavigateBack ? colors.text : colors.textSecondary} 
+          />
+        </TouchableOpacity>
         
-        <button
-          onClick={handleForward}
+        <TouchableOpacity
+          onPress={handleForward}
           disabled={!canNavigateForward}
-          className={`p-3 rounded-full transition-all duration-200 transform ${
-            canNavigateForward 
-              ? 'hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 text-gray-700 dark:text-gray-300' 
-              : 'opacity-40 cursor-not-allowed text-gray-400 dark:text-gray-600'
-          }`}
-          title={canNavigateForward ? "Go forward" : "Can't go forward"}
+          style={[styles.navButton, { opacity: canNavigateForward ? 1 : 0.4 }]}
         >
-          <ArrowRight className="w-6 h-6" />
-        </button>
-      </div>
+          <Ionicons 
+            name="chevron-forward" 
+            size={24} 
+            color={canNavigateForward ? colors.text : colors.textSecondary} 
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Center controls */}
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={handleRefresh}
-          className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-110"
-          title="Refresh"
-        >
-          <RotateCcw className="w-6 h-6" />
-        </button>
+      <View style={styles.centerControls}>
+        <TouchableOpacity onPress={handleRefresh} style={styles.navButton}>
+          <Ionicons name="refresh" size={24} color={colors.text} />
+        </TouchableOpacity>
         
-        <button
-          onClick={handleHome}
-          className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-110"
-          title="Home"
-        >
-          <Home className="w-6 h-6" />
-        </button>
+        <TouchableOpacity onPress={handleHome} style={styles.navButton}>
+          <Ionicons name="home" size={24} color={colors.text} />
+        </TouchableOpacity>
 
-        {/* Tab Switcher */}
         <TabSwitcher />
-      </div>
+      </View>
 
       {/* Right side menu */}
-      <div className="flex items-center">
+      <View style={styles.rightControls}>
         <BrowserMenu />
-      </div>
-    </div>
+      </View>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  leftControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  centerControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  rightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  navButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

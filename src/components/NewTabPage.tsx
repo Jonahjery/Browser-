@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Edit3, Plus, X, Check, Trash2, Globe, AlertCircle, UserX, Shield, Eye, Lock } from 'lucide-react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useBrowserStore } from '../stores/browserStore';
+import { useTheme } from '../hooks/useTheme';
+
+const { width } = Dimensions.get('window');
 
 export const NewTabPage: React.FC = () => {
   const { navigateTab, activeTabId, createTab, isPrivateMode, togglePrivateMode, quickLinks, addQuickLink, removeQuickLink, updateQuickLink } = useBrowserStore();
@@ -8,15 +13,16 @@ export const NewTabPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newLink, setNewLink] = useState({ title: '', url: '', icon: '', color: 'bg-blue-500' });
-  const [editLink, setEditLink] = useState({ title: '', url: '', icon: '', color: 'bg-blue-500' });
+  const [newLink, setNewLink] = useState({ title: '', url: '', icon: '', color: '#3B82F6' });
+  const [editLink, setEditLink] = useState({ title: '', url: '', icon: '', color: '#3B82F6' });
+  const { colors } = useTheme();
 
   const MAX_QUICK_LINKS = 20;
   const isAtLimit = quickLinks.length >= MAX_QUICK_LINKS;
 
   const colorOptions = isPrivateMode 
-    ? ['bg-purple-500', 'bg-purple-600', 'bg-purple-700', 'bg-indigo-500', 'bg-indigo-600', 'bg-violet-500', 'bg-violet-600', 'bg-pink-500', 'bg-pink-600', 'bg-gray-700', 'bg-gray-800', 'bg-slate-600']
-    : ['bg-blue-500', 'bg-red-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500', 'bg-teal-500', 'bg-gray-600', 'bg-black', 'bg-blue-700'];
+    ? ['#8B5CF6', '#7C3AED', '#6D28D9', '#6366F1', '#5B21B6', '#EC4899', '#BE185D', '#9333EA', '#7E22CE', '#6B7280', '#374151', '#475569']
+    : ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#F97316', '#14B8A6', '#6B7280', '#000000', '#1E40AF'];
 
   const handleQuickLink = (url: string) => {
     if (activeTabId && !isEditing) {
@@ -24,8 +30,7 @@ export const NewTabPage: React.FC = () => {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = () => {
     if (!activeTabId || !searchValue.trim()) return;
 
     let url = searchValue.trim();
@@ -41,7 +46,6 @@ export const NewTabPage: React.FC = () => {
 
   const handlePrivateModeToggle = () => {
     togglePrivateMode();
-    // Create a new tab in the new mode
     createTab('atom://newtab', !isPrivateMode);
   };
 
@@ -61,386 +65,613 @@ export const NewTabPage: React.FC = () => {
         color: newLink.color
       });
       
-      setNewLink({ title: '', url: '', icon: '', color: isPrivateMode ? 'bg-purple-500' : 'bg-blue-500' });
+      setNewLink({ title: '', url: '', icon: '', color: isPrivateMode ? '#8B5CF6' : '#3B82F6' });
       setShowAddForm(false);
     }
   };
 
-  const handleEditLink = (link: any) => {
-    setEditingId(link.id);
-    setEditLink({
-      title: link.title,
-      url: link.url,
-      icon: link.icon,
-      color: link.color
-    });
-  };
-
-  const handleSaveEdit = () => {
-    if (editingId && editLink.title && editLink.url) {
-      let url = editLink.url;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = `https://${url}`;
-      }
-      
-      updateQuickLink(editingId, {
-        title: editLink.title,
-        url: url,
-        icon: editLink.icon || editLink.title.charAt(0).toUpperCase(),
-        color: editLink.color
-      });
-      
-      setEditingId(null);
-      setEditLink({ title: '', url: '', icon: '', color: isPrivateMode ? 'bg-purple-500' : 'bg-blue-500' });
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditLink({ title: '', url: '', icon: '', color: isPrivateMode ? 'bg-purple-500' : 'bg-blue-500' });
-  };
-
-  const handleRemoveLink = (id: string) => {
-    removeQuickLink(id);
-  };
-
-  const handleShowAddForm = () => {
-    if (isAtLimit) return;
-    setShowAddForm(true);
-  };
-
-  // Private Mode Design - Chrome-like minimal design (NO VISUAL INDICATORS)
+  // Private Mode Design
   if (isPrivateMode) {
     return (
-      <div className="h-full bg-gradient-to-br from-gray-900 via-purple-900 to-black overflow-hidden relative">
-        {/* Animated Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-violet-500/20 animate-pulse"></div>
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(139,69,255,0.1),transparent_50%)]"></div>
-        </div>
-
-        {/* Chrome-like Private Browsing Content - Minimal Design */}
-        <div className="h-full flex flex-col justify-center p-6 pb-24 pt-16 relative z-10">
-          <div className="max-w-4xl w-full text-center mx-auto">
-            {/* Private Browsing Title - Smaller and properly positioned */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-white mb-3">You've gone private</h1>
-              <p className="text-purple-200 text-base leading-relaxed max-w-xl mx-auto">
-                Your browsing activity won't be saved to this device. Downloads and bookmarks will be saved.
-              </p>
-            </div>
-
-            {/* Private Search Bar - Chrome Style */}
-            <form onSubmit={handleSearch} className="mb-6">
-              <div className="relative max-w-xl mx-auto">
-                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-purple-300" />
-                </div>
-                <input
-                  type="text"
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  placeholder="Search the web"
-                  className="w-full pl-14 pr-5 py-4 bg-gray-800/60 backdrop-blur-sm rounded-full shadow-2xl border border-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent text-white placeholder-purple-300 transition-all duration-200 text-base"
-                />
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/10 to-violet-500/10 pointer-events-none"></div>
-              </div>
-            </form>
-
-            {/* Private Browsing Features - Compact Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
-              <div className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-3 border border-purple-500/20">
-                <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Eye className="w-3 h-3 text-purple-300" />
-                </div>
-                <h3 className="text-white font-semibold text-xs mb-1">Private to you</h3>
-                <p className="text-purple-200 text-xs leading-relaxed">Other people who use this device won't see your activity</p>
-              </div>
-
-              <div className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-3 border border-purple-500/20">
-                <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Shield className="w-3 h-3 text-purple-300" />
-                </div>
-                <h3 className="text-white font-semibold text-xs mb-1">Cleared when you're done</h3>
-                <p className="text-purple-200 text-xs leading-relaxed">Atom clears your browsing data when you close all private tabs</p>
-              </div>
-
-              <div className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-3 border border-purple-500/20">
-                <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Globe className="w-3 h-3 text-purple-300" />
-                </div>
-                <h3 className="text-white font-semibold text-xs mb-1">Not fully private</h3>
-                <p className="text-purple-200 text-xs leading-relaxed">Websites, your employer, or internet provider can still see your activity</p>
-              </div>
-            </div>
-
-            {/* Hidden Exit Private Mode Button - Only accessible via menu */}
-            <button
-              onClick={handlePrivateModeToggle}
-              className="absolute top-4 right-4 opacity-0 hover:opacity-100 transition-opacity duration-300 p-2 text-purple-400 hover:text-purple-200"
-              title="Exit Private Mode"
+      <LinearGradient
+        colors={['#111827', '#6B21B6', '#000000']}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.privateContent}>
+          <View style={styles.privateHeader}>
+            <TouchableOpacity
+              onPress={handlePrivateModeToggle}
+              style={styles.exitPrivateButton}
             >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
+              <Ionicons name="close" size={20} color="#A855F7" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.privateCenterContent}>
+            <Text style={styles.privateTitle}>You've gone private</Text>
+            <Text style={styles.privateSubtitle}>
+              Your browsing activity won't be saved to this device. Downloads and bookmarks will be saved.
+            </Text>
+
+            {/* Private Search Bar */}
+            <View style={styles.privateSearchContainer}>
+              <View style={styles.privateSearchIcon}>
+                <Ionicons name="search" size={20} color="#A855F7" />
+              </View>
+              <TextInput
+                style={styles.privateSearchInput}
+                value={searchValue}
+                onChangeText={setSearchValue}
+                onSubmitEditing={handleSearch}
+                placeholder="Search the web"
+                placeholderTextColor="#A855F7"
+                returnKeyType="search"
+              />
+            </View>
+
+            {/* Private Features */}
+            <View style={styles.privateFeatures}>
+              {[
+                { icon: 'eye', title: 'Private to you', desc: 'Other people who use this device won\'t see your activity' },
+                { icon: 'shield-checkmark', title: 'Cleared when you\'re done', desc: 'Atom clears your browsing data when you close all private tabs' },
+                { icon: 'globe', title: 'Not fully private', desc: 'Websites, your employer, or internet provider can still see your activity' }
+              ].map((feature, index) => (
+                <View key={index} style={styles.privateFeatureCard}>
+                  <View style={styles.privateFeatureIcon}>
+                    <Ionicons name={feature.icon as any} size={12} color="#A855F7" />
+                  </View>
+                  <Text style={styles.privateFeatureTitle}>{feature.title}</Text>
+                  <Text style={styles.privateFeatureDesc}>{feature.desc}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </LinearGradient>
     );
   }
 
-  // Normal Mode Design (existing code)
+  // Normal Mode Design
   return (
-    <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 overflow-y-auto relative">
-      {/* Normal Mode Toggle Button - Enhanced with Purple Blinking Animation */}
-      <div className="absolute top-16 right-6 z-10">
-        <button
-          onClick={handlePrivateModeToggle}
-          className="group relative w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center border-2 transform bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500"
-          title="Enter Private Mode"
-        >
-          <div className="transition-all duration-300 group-hover:scale-110">
-            <Shield className="w-6 h-6 text-gray-600 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300" />
-          </div>
-          
-          {/* Enhanced Purple Blinking Animation Overlay */}
-          <div className="absolute inset-0 rounded-full bg-purple-500/0 group-hover:bg-purple-500/10 transition-all duration-300"></div>
-          
-          {/* NEW: Purple Blinking Ring Animation */}
-          <div className="absolute inset-0 rounded-full border-2 border-purple-500/60 animate-pulse opacity-70"></div>
-          <div className="absolute inset-0 rounded-full border-2 border-purple-400/40 animate-ping"></div>
-          
-          {/* NEW: Purple Glow Effect */}
-          <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-pulse shadow-lg shadow-purple-500/30"></div>
-          
-          {/* NEW: Attention-grabbing Purple Dot */}
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full animate-pulse shadow-lg">
-            <div className="w-full h-full bg-purple-400 rounded-full animate-ping"></div>
-          </div>
-          
-          {/* NEW: Rotating Purple Gradient Border */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/30 via-transparent to-purple-500/30 animate-spin opacity-50"></div>
-        </button>
-      </div>
+    <LinearGradient
+      colors={[colors.background, colors.surface]}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Private Mode Toggle Button */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={handlePrivateModeToggle}
+            style={[styles.privateModeButton, { borderColor: colors.border }]}
+          >
+            <Ionicons name="shield" size={24} color={colors.primary} />
+            <View style={styles.privateModeIndicator} />
+          </TouchableOpacity>
+        </View>
 
-      <div className="min-h-full p-6 pb-24">
-        <div className="max-w-md mx-auto">
+        <View style={styles.centerContent}>
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mb-8 mt-8">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search or enter URL"
-                className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 transition-all duration-200"
-              />
-            </div>
-          </form>
+          <View style={[styles.searchContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              value={searchValue}
+              onChangeText={setSearchValue}
+              onSubmitEditing={handleSearch}
+              placeholder="Search or enter URL"
+              placeholderTextColor={colors.textSecondary}
+              returnKeyType="search"
+            />
+          </View>
 
           {/* Quick Access Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Quick access
-                </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  ({quickLinks.length}/{MAX_QUICK_LINKS})
-                </span>
-              </div>
-              <button 
-                onClick={() => setIsEditing(!isEditing)}
-                className={`p-2 rounded-lg transition-all duration-200 ${
-                  isEditing 
-                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-                title={isEditing ? 'Done editing' : 'Edit quick access'}
+          <View style={styles.quickAccessSection}>
+            <View style={styles.quickAccessHeader}>
+              <Text style={[styles.quickAccessTitle, { color: colors.text }]}>
+                Quick access
+              </Text>
+              <Text style={[styles.quickAccessCount, { color: colors.textSecondary }]}>
+                ({quickLinks.length}/{MAX_QUICK_LINKS})
+              </Text>
+              <TouchableOpacity 
+                onPress={() => setIsEditing(!isEditing)}
+                style={[styles.editButton, { backgroundColor: isEditing ? colors.primary : 'transparent' }]}
               >
-                {isEditing ? <Check className="w-5 h-5" /> : <Edit3 className="w-5 h-5" />}
-              </button>
-            </div>
+                <Ionicons 
+                  name={isEditing ? "checkmark" : "create"} 
+                  size={20} 
+                  color={isEditing ? '#FFFFFF' : colors.textSecondary} 
+                />
+              </TouchableOpacity>
+            </View>
 
             {/* Limit Warning */}
             {isAtLimit && (
-              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center space-x-2 animate-fadeIn">
-                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  You've reached the maximum of {MAX_QUICK_LINKS} quick access links. Remove some to add new ones.
-                </p>
-              </div>
+              <View style={[styles.limitWarning, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
+                <Ionicons name="warning" size={16} color={colors.warning} />
+                <Text style={[styles.limitWarningText, { color: colors.warning }]}>
+                  You've reached the maximum of {MAX_QUICK_LINKS} quick access links.
+                </Text>
+              </View>
             )}
             
             {/* Quick Links Grid */}
-            <div className="grid grid-cols-4 gap-4">
+            <View style={styles.quickLinksGrid}>
               {quickLinks.map((link, index) => (
-                <div key={link.id} className="relative group">
+                <View key={link.id} style={styles.quickLinkContainer}>
                   {editingId === link.id ? (
-                    /* Edit Form */
-                    <div className="col-span-4 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg border border-gray-200 dark:border-gray-700 animate-fadeIn">
-                      <div className="space-y-3">
-                        <input
-                          type="text"
-                          placeholder="Title"
-                          value={editLink.title}
-                          onChange={(e) => setEditLink({ ...editLink, title: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <input
-                          type="text"
-                          placeholder="URL"
-                          value={editLink.url}
-                          onChange={(e) => setEditLink({ ...editLink, url: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Icon (emoji or letter)"
-                          value={editLink.icon}
-                          onChange={(e) => setEditLink({ ...editLink, icon: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <div className="flex flex-wrap gap-2">
-                          {colorOptions.map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => setEditLink({ ...editLink, color })}
-                              className={`w-6 h-6 ${color} rounded-full border-2 ${
-                                editLink.color === color ? 'border-gray-900 dark:border-white' : 'border-transparent'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleSaveEdit}
-                            className="flex-1 bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <View style={[styles.editForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <TextInput
+                        style={[styles.editInput, { backgroundColor: colors.input, color: colors.text }]}
+                        placeholder="Title"
+                        value={editLink.title}
+                        onChangeText={(text) => setEditLink({ ...editLink, title: text })}
+                        placeholderTextColor={colors.textSecondary}
+                      />
+                      <TextInput
+                        style={[styles.editInput, { backgroundColor: colors.input, color: colors.text }]}
+                        placeholder="URL"
+                        value={editLink.url}
+                        onChangeText={(text) => setEditLink({ ...editLink, url: text })}
+                        placeholderTextColor={colors.textSecondary}
+                      />
+                      <TextInput
+                        style={[styles.editInput, { backgroundColor: colors.input, color: colors.text }]}
+                        placeholder="Icon (emoji or letter)"
+                        value={editLink.icon}
+                        onChangeText={(text) => setEditLink({ ...editLink, icon: text })}
+                        placeholderTextColor={colors.textSecondary}
+                      />
+                      <View style={styles.colorPicker}>
+                        {colorOptions.slice(0, 6).map((color) => (
+                          <TouchableOpacity
+                            key={color}
+                            onPress={() => setEditLink({ ...editLink, color })}
+                            style={[
+                              styles.colorOption,
+                              { backgroundColor: color },
+                              editLink.color === color && styles.selectedColor
+                            ]}
+                          />
+                        ))}
+                      </View>
+                      <View style={styles.editActions}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (editLink.title && editLink.url) {
+                              let url = editLink.url;
+                              if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                                url = `https://${url}`;
+                              }
+                              updateQuickLink(link.id, {
+                                title: editLink.title,
+                                url: url,
+                                icon: editLink.icon || editLink.title.charAt(0).toUpperCase(),
+                                color: editLink.color
+                              });
+                              setEditingId(null);
+                            }
+                          }}
+                          style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                        >
+                          <Text style={styles.saveButtonText}>Save</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => setEditingId(null)}
+                          style={[styles.cancelButton, { backgroundColor: colors.surface }]}
+                        >
+                          <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   ) : (
-                    /* Normal Link Display */
-                    <button
-                      onClick={() => isEditing ? handleEditLink(link) : handleQuickLink(link.url)}
-                      className="flex flex-col items-center p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 w-full relative"
-                      style={{
-                        animationDelay: `${index * 100}ms`
-                      }}
+                    <TouchableOpacity
+                      onPress={() => isEditing ? setEditingId(link.id) : handleQuickLink(link.url)}
+                      style={[styles.quickLink, { backgroundColor: colors.surface }]}
                     >
-                      <div className={`w-12 h-12 ${link.color} rounded-2xl flex items-center justify-center mb-2 text-white font-bold text-lg`}>
-                        {link.icon}
-                      </div>
-                      <span className="text-xs text-gray-700 dark:text-gray-300 text-center leading-tight">
+                      <View style={[styles.quickLinkIcon, { backgroundColor: link.color }]}>
+                        <Text style={styles.quickLinkIconText}>{link.icon}</Text>
+                      </View>
+                      <Text style={[styles.quickLinkTitle, { color: colors.text }]} numberOfLines={2}>
                         {link.title}
-                      </span>
+                      </Text>
                       
-                      {/* Edit/Delete buttons */}
                       {isEditing && (
-                        <div className="absolute -top-2 -right-2 flex gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveLink(link.id);
-                            }}
-                            className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
+                        <TouchableOpacity
+                          onPress={() => removeQuickLink(link.id)}
+                          style={styles.deleteButton}
+                        >
+                          <Ionicons name="close" size={16} color="#FFFFFF" />
+                        </TouchableOpacity>
                       )}
-                    </button>
+                    </TouchableOpacity>
                   )}
-                </div>
+                </View>
               ))}
 
               {/* Add Button */}
               {showAddForm ? (
-                <div className="col-span-4 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg border border-gray-200 dark:border-gray-700 animate-fadeIn">
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Title"
-                      value={newLink.title}
-                      onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="URL"
-                      value={newLink.url}
-                      onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Icon (emoji or letter)"
-                      value={newLink.icon}
-                      onChange={(e) => setNewLink({ ...newLink, icon: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {colorOptions.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => setNewLink({ ...newLink, color })}
-                          className={`w-6 h-6 ${color} rounded-full border-2 ${
-                            newLink.color === color ? 'border-gray-900 dark:border-white' : 'border-transparent'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleAddLink}
-                        disabled={isAtLimit}
-                        className="flex-1 bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Add
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowAddForm(false);
-                          setNewLink({ title: '', url: '', icon: '', color: 'bg-blue-500' });
-                        }}
-                        className="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <View style={[styles.addForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TextInput
+                    style={[styles.editInput, { backgroundColor: colors.input, color: colors.text }]}
+                    placeholder="Title"
+                    value={newLink.title}
+                    onChangeText={(text) => setNewLink({ ...newLink, title: text })}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.editInput, { backgroundColor: colors.input, color: colors.text }]}
+                    placeholder="URL"
+                    value={newLink.url}
+                    onChangeText={(text) => setNewLink({ ...newLink, url: text })}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.editInput, { backgroundColor: colors.input, color: colors.text }]}
+                    placeholder="Icon (emoji or letter)"
+                    value={newLink.icon}
+                    onChangeText={(text) => setNewLink({ ...newLink, icon: text })}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <View style={styles.colorPicker}>
+                    {colorOptions.slice(0, 6).map((color) => (
+                      <TouchableOpacity
+                        key={color}
+                        onPress={() => setNewLink({ ...newLink, color })}
+                        style={[
+                          styles.colorOption,
+                          { backgroundColor: color },
+                          newLink.color === color && styles.selectedColor
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      onPress={handleAddLink}
+                      disabled={isAtLimit}
+                      style={[styles.saveButton, { backgroundColor: colors.primary, opacity: isAtLimit ? 0.5 : 1 }]}
+                    >
+                      <Text style={styles.saveButtonText}>Add</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowAddForm(false);
+                        setNewLink({ title: '', url: '', icon: '', color: '#3B82F6' });
+                      }}
+                      style={[styles.cancelButton, { backgroundColor: colors.surface }]}
+                    >
+                      <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               ) : (
-                <button 
-                  onClick={handleShowAddForm}
+                <TouchableOpacity 
+                  onPress={() => !isAtLimit && setShowAddForm(true)}
                   disabled={isAtLimit}
-                  className={`w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm transition-all duration-200 flex items-center justify-center mx-auto ${
-                    isAtLimit 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:shadow-md hover:scale-105'
-                  }`}
-                  title={isAtLimit ? `Maximum ${MAX_QUICK_LINKS} links reached` : 'Add new quick access'}
+                  style={[
+                    styles.addButton, 
+                    { backgroundColor: colors.surface, opacity: isAtLimit ? 0.5 : 1 }
+                  ]}
                 >
-                  <Plus className={`w-6 h-6 ${isAtLimit ? 'text-gray-300' : 'text-gray-400'}`} />
-                </button>
+                  <Ionicons name="add" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  privateContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+  },
+  header: {
+    alignItems: 'flex-end',
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  privateHeader: {
+    alignItems: 'flex-end',
+    paddingTop: 16,
+  },
+  privateModeButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  privateModeIndicator: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#8B5CF6',
+  },
+  exitPrivateButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingTop: 32,
+  },
+  privateCenterContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  privateTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  privateSubtitle: {
+    fontSize: 16,
+    color: '#A855F7',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+    maxWidth: 320,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 25,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    height: 50,
+    marginBottom: 32,
+  },
+  privateSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(55, 65, 81, 0.6)',
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    paddingHorizontal: 20,
+    height: 50,
+    marginBottom: 32,
+    width: '100%',
+    maxWidth: 400,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  privateSearchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 0,
+  },
+  privateSearchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    paddingVertical: 0,
+  },
+  privateFeatures: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    maxWidth: 600,
+  },
+  privateFeatureCard: {
+    backgroundColor: 'rgba(55, 65, 81, 0.4)',
+    borderRadius: 12,
+    padding: 12,
+    width: (width - 80) / 3,
+    minWidth: 100,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
+  },
+  privateFeatureIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(139, 92, 246, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  privateFeatureTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  privateFeatureDesc: {
+    fontSize: 10,
+    color: '#A855F7',
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  quickAccessSection: {
+    marginTop: 16,
+  },
+  quickAccessHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  quickAccessTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    flex: 1,
+  },
+  quickAccessCount: {
+    fontSize: 14,
+    marginRight: 12,
+  },
+  editButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  limitWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  limitWarningText: {
+    fontSize: 12,
+    marginLeft: 8,
+    flex: 1,
+  },
+  quickLinksGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  quickLinkContainer: {
+    width: (width - 56) / 4,
+  },
+  quickLink: {
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 16,
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickLinkIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  quickLinkIconText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  quickLinkTitle: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButton: {
+    width: (width - 56) / 4,
+    height: 80,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#D1D5DB',
+  },
+  editForm: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    width: (width - 32),
+    marginBottom: 12,
+  },
+  addForm: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    width: (width - 32),
+    marginBottom: 12,
+  },
+  editInput: {
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+    fontSize: 14,
+  },
+  colorPicker: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  colorOption: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  selectedColor: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  cancelButtonText: {
+    fontWeight: '600',
+    fontSize: 14,
+  },
+});
